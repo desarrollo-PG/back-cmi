@@ -3,3 +3,25 @@ node_modules/
 dist/
 *.log
 .DS_Store
+/src/generated/prisma
+
+# Archivos de IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos de sistema
+Thumbs.db
+ehthumbs.db
+
+# Archivos temporales
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Archivos de debugging
+*.tsbuildinfo
+.eslintcache

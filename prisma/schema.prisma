@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model usuario {
+  idusuario                Int                       @id @default(autoincrement())
+  fkrol                    Int
+  usuario                  String                    @unique @db.VarChar(20)
+  clave                    String                    @db.VarChar(255)
+  nombres                  String                    @db.VarChar(100)
+  apellidos                String                    @db.VarChar(100)
+  fechanacimiento          DateTime                  @db.Date
+  correo                   String                    @unique @db.VarChar(150)
+  puesto                   String?                   @db.VarChar(100)
+  profesion                String?                   @db.VarChar(100)
+  telinstitucional         String?                   @db.VarChar(20)
+  extension                String?                   @db.VarChar(10)
+  telefonopersonal         String?                   @db.VarChar(20)
+  nombrecontactoemergencia String?                   @db.VarChar(150)
+  telefonoemergencia       String?                   @db.VarChar(20)
+  rutafotoperfil           String?
+  observaciones            String?
+  usuariocreacion          String                    @db.VarChar(100)
+  fechacreacion            DateTime?                 @default(now()) @db.Timestamp(6)
+  usuariomodificacion      String?                   @db.VarChar(100)
+  fechamodificacion        DateTime?                 @db.Timestamp(6)
+  estado                   Int?                      @default(1) @db.SmallInt
+  cambiarclave             Boolean                   @default(false)
+  agendas                  agenda[]
+  detallesHistorialClinico detallehistorialclinico[]
+  referenciasPaciente      detallereferirpaciente[]
+  inventariomedico         inventariomedico[]
+  rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
+}
+
+model rol {
+  idrol               Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  descripcion         String?
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
+  usuario             usuario[]
+}
+
+model agenda {
+  idagenda            Int       @id @default(autoincrement())
+  fkusuario           Int
+  fkpaciente          Int
+  fechaatencion       DateTime  @db.Date
+  horaatencion        DateTime  @db.Time(6)
+  comentario          String?
+  transporte          Int?      @default(0) @db.SmallInt
+  fechatransporte     DateTime? @db.Date
+  horariotransporte   DateTime? @db.Time(6)
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
+  paciente            paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_paciente")
+  usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_agenda_usuario")
+}
+
+model clinica {
+  idclinica              Int                      @id @default(autoincrement())
+  nombreclinica          String                   @db.VarChar(200)
+  usuariocreacion        String                   @db.VarChar(100)
+  fechacreacion          DateTime?                @default(now()) @db.Timestamp(6)
+  usuariomodificacion    String?                  @db.VarChar(100)
+  fechamodificacion      DateTime?                @db.Timestamp(6)
+  estado                 Int?                     @default(1) @db.SmallInt
+  detallereferirpaciente detallereferirpaciente[]
+}
+
+model detallehistorialclinico {
+  idhistorial            Int       @id @default(autoincrement())
+  fkpaciente             Int
+  fkusuario              Int
+  fecha                  DateTime  @db.Date
+  recordatorio           String?
+  notaconsulta           String?
+  motivoconsulta         String?
+  evolucion              String?
+  diagnosticotratamiento String?
+  usuariocreacion        String    @db.VarChar(100)
+  fechacreacion          DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion    String?   @db.VarChar(100)
+  fechamodificacion      DateTime? @db.Timestamp(6)
+  estado                 Int?      @default(1) @db.SmallInt
+  paciente               paciente  @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_paciente")
+  usuario                usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_historial_usuario")
+}
+
+model detallereferirpaciente {
+  idrefpaciente       Int        @id @default(autoincrement())
+  fkusuario           Int
+  fkpaciente          Int
+  fkexpediente        Int
+  fkclinica           Int
+  comentario          String?
+  confirmacion1       Int?       @default(0) @db.SmallInt
+  usuarioconfirma1    String?    @db.VarChar(100)
+  confirmacion2       Int?       @default(0) @db.SmallInt
+  usuarioconfirma2    String?    @db.VarChar(100)
+  confirmacion3       Int?       @default(0) @db.SmallInt
+  usuarioconfirma3    String?    @db.VarChar(100)
+  confirmacion4       Int?       @default(0) @db.SmallInt
+  usuarioconfirma4    String?    @db.VarChar(100)
+  usuariocreacion     String     @db.VarChar(100)
+  fechacreacion       DateTime?  @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?    @db.VarChar(100)
+  fechamodificacion   DateTime?  @db.Timestamp(6)
+  estado              Int?       @default(1) @db.SmallInt
+  clinica             clinica    @relation(fields: [fkclinica], references: [idclinica], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_clinica")
+  expediente          expediente @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_expediente")
+  paciente            paciente   @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_paciente")
+  usuario             usuario    @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_referir_usuario")
+}
+
+model expediente {
+  idexpediente           Int                      @id @default(autoincrement())
+  fkpaciente             Int? 
+  numeroexpediente       String                   @unique @db.VarChar(50)
+  historiaenfermedad     String?
+  antmedico              String?
+  antmedicamento         String?
+  anttraumaticos         String?
+  antfamiliar            String?
+  antalergico            String?
+  antmedicamentos        String?
+  antsustancias          String?
+  antintolerantelactosa  Int?                     @default(0) @db.SmallInt
+  antfisoinmunizacion    String?
+  antfisocrecimiento     String?
+  antfisohabitos         String?
+  antfisoalimentos       String?
+  gineobsprenatales      String?
+  gineobsnatales         String?
+  gineobspostnatales     String?
+  gineobsgestas          Int?
+  gineobspartos          Int?
+  gineobsabortos         Int?
+  gineobscesareas        Int?
+  gineobshv              String?
+  gineobsmh              String?
+  gineobsfur             DateTime?                @db.Date
+  gineobsciclos          String?
+  gineobsmenarquia       String?
+  examenfistc            Decimal?                 @db.Decimal(5, 2)
+  examenfispa            String?                  @db.VarChar(20)
+  examenfisfc            Int?
+  examenfisfr            Int?
+  examenfissao2          Decimal?                 @db.Decimal(5, 2)
+  examenfispeso          Decimal?                 @db.Decimal(6, 2)
+  examenfistalla         Decimal?                 @db.Decimal(5, 2)
+  examenfisimc           Decimal?                 @db.Decimal(5, 2)
+  examenfisgmt           String?
+  usuariocreacion        String                   @db.VarChar(100)
+  fechacreacion          DateTime?                @default(now()) @db.Timestamp(6)
+  usuariomodificacion    String?                  @db.VarChar(100)
+  fechamodificacion      DateTime?                @db.Timestamp(6)
+  estado                 Int?                     @default(1) @db.SmallInt
+  detallereferirpaciente detallereferirpaciente[]
+  paciente               paciente?                @relation(fields: [fkpaciente], references: [idpaciente], onDelete: NoAction, onUpdate: NoAction, map: "fk_expediente_paciente")
+
+  @@index([fkpaciente], map: "idx_expediente_fkpaciente")
+}
+
+model paciente {
+  idpaciente               Int                       @id @default(autoincrement())
+  nombres                  String                    @db.VarChar(100)
+  apellidos                String                    @db.VarChar(100)
+  cui                      String                    @unique @db.VarChar(20)
+  fechanacimiento          DateTime                  @db.Date
+  genero                   String                    @db.Char(1)
+  tipoconsulta             String?                   @db.VarChar(100)
+  tipodiscapacidad         String?                   @db.VarChar(150)
+  telefonopersonal         String?                   @db.VarChar(20)
+  nombrecontactoemergencia String?                   @db.VarChar(150)
+  telefonoemergencia       String?                   @db.VarChar(20)
+  nombreencargado          String?                   @db.VarChar(150)
+  dpiencargado             String?                   @db.VarChar(20)
+  telefonoencargado        String?                   @db.VarChar(20)
+  municipio                String?                   @db.VarChar(100)
+  aldea                    String?                   @db.VarChar(100)
+  direccion                String?
+  rutafotoperfil           String?
+  rutafotoencargado        String?
+  rutacartaautorizacion    String?
+  usuariocreacion          String                    @db.VarChar(100)
+  fechacreacion            DateTime?                 @default(now()) @db.Timestamp(6)
+  usuariomodificacion      String?                   @db.VarChar(100)
+  fechamodificacion        DateTime?                 @db.Timestamp(6)
+  estado                   Int?                      @default(1) @db.SmallInt
+  agenda                   agenda[]
+  detallehistorialclinico  detallehistorialclinico[]
+  detallereferirpaciente   detallereferirpaciente[]
+  expedientes              expediente[]
+}
+
+model inventariomedico {
+  idmedicina          Int       @id @default(autoincrement())
+  fkusuario           Int
+  nombre              String    @db.VarChar(200)
+  descripcion         String?
+  unidades            Int?      @default(0)
+  precio              Decimal?  @db.Decimal(10, 2)
+  observaciones       String?
+  fechaingreso        DateTime? @db.Date
+  fechaegreso         DateTime? @db.Date
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
+  usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
+}
