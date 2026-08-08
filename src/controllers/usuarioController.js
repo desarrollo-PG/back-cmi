@@ -1,9 +1,21 @@
 const usuarioService = require('../services/usuarioService');
 const { conAuditoria } = require('../utils/auditoria.helper');
+const { prisma } = require('../config/prisma');
+
+// Por nombre de rol, no por ID: el idrol de cada uno cambia entre entornos
+// e incluso entre momentos distintos del mismo entorno.
+const ROLES_VEN_INACTIVOS = ['Administrador', 'Sistemas', 'Auxiliar Administrativa'];
 
 const obtenerUsuarios = async (req, res) => {
     try{
-        const incluirInactivos = req.query.includeInactive === 'true' && (req.usuario.fkrol === 1 || req.usuario.fkrol === 4 || req.usuario.fkrol === 7);
+        let incluirInactivos = false;
+        if (req.query.includeInactive === 'true') {
+            const solicitante = await prisma.usuario.findUnique({
+                where: { idusuario: req.usuario.idusuario },
+                include: { rol: { select: { nombre: true } } }
+            });
+            incluirInactivos = ROLES_VEN_INACTIVOS.includes(solicitante?.rol?.nombre);
+        }
         const resultado = await usuarioService.obtenerUsuarios(!incluirInactivos);
 
         if(resultado.success){
@@ -170,7 +182,11 @@ const actualizarPerfil = async (req, res) => {
         const updateData = req.body;
         const usuario = req.usuario?.usuario || 'sistema';
 
-        if (req.usuario.fkrol !== 1) {
+        const solicitante = await prisma.usuario.findUnique({
+            where: { idusuario: req.usuario.idusuario },
+            include: { rol: { select: { nombre: true } } }
+        });
+        if (solicitante?.rol?.nombre !== 'Administrador') {
             delete updateData.fkrol;
         }
 

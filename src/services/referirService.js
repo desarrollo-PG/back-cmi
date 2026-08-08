@@ -1,5 +1,6 @@
 
 const { prisma } = require('../config/prisma');
+const { tienePermiso } = require('../middlewares/checkPermiso');
 
 const referirService = {
 
@@ -270,7 +271,7 @@ const referirService = {
         include: { rol: true, clinica: true }
       });
 
-      const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 7;
+      const esAdmin = await tienePermiso(usuarioConRol.fkrol, 'referidos-autorizar');
       const usuarioNombre = usuario.usuario;
       let campoActualizar = {};
       let mensaje = '';
@@ -394,7 +395,7 @@ const referirService = {
         include: { rol: true }
       });
 
-      const esAdmin = usuarioConRol.fkrol === 1 || usuarioConRol.fkrol === 7;
+      const esAdmin = await tienePermiso(usuarioConRol.fkrol, 'referidos-autorizar');
       const esCreador = referido.fkusuario === usuario.idusuario;
 
       const datosLimpios = Object.fromEntries(
