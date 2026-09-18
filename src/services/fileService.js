@@ -111,6 +111,11 @@ class FileService {
       await fs.unlink(fullPath);
       return true;
     } catch (error) {
+      // Si el archivo ya no existe, el resultado que se buscaba (que no exista)
+      // ya se cumple: no es un error, para no dejar atascada la referencia en BD.
+      if (error.code === 'ENOENT') {
+        return true;
+      }
       console.error('Error eliminando archivo:', error);
       return false;
     }

@@ -545,7 +545,8 @@ class UsuarioService {
             const usuario = await prismaClient.usuario.findUnique({
                 where:{
                     idusuario: parseInt(idusuario)
-                }
+                },
+                include: { rol: { select: { nombre: true } } }
             });
 
             if(!usuario){
@@ -562,10 +563,10 @@ class UsuarioService {
                 };
             }
 
-            if(Number(usuario.fkrol) === 1){
+            if(usuario.rol?.nombre === 'Administrador'){
                 const adminContador = await prismaClient.usuario.count({
                     where:{
-                        fkrol: 1,
+                        rol: { nombre: 'Administrador' },
                         estado: 1
                     }
                 });

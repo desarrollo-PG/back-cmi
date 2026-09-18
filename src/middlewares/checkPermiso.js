@@ -31,6 +31,41 @@ async function esRolSuperadmin(fkrol) {
 }
 
 /**
+ * Verifica si un rol (por fkrol) tiene acceso a una ruta de permiso.
+ * Reutilizable tanto en middlewares de Express como en services (sin req/res).
+ * @param {number} fkrol
+ * @param {string} rutaPagina - Ruta de la página en la tabla permiso (ej: 'inventario')
+ */
+const tienePermiso = async (fkrol, rutaPagina) => {
+  if (!fkrol) return false;
+
+  // Superadmin: acceso total (resuelto por nombre de rol, con cache)
+  if (await esRolSuperadmin(fkrol)) return true;
+
+  // Revisar caché
+  const cacheKey = `${fkrol}:${rutaPagina}`;
+  const cached = _cache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) {
+    return cached.tieneAcceso;
+  }
+
+  // Consultar BD: ¿tiene este rol permiso para esta página?
+  const registro = await prisma.rol_permiso.findFirst({
+    where: {
+      fkrol,
+      permiso: { ruta: rutaPagina }
+    }
+  });
+
+  const tieneAcceso = !!registro;
+
+  // Guardar en caché
+  _cache.set(cacheKey, { tieneAcceso, expires: Date.now() + CACHE_TTL });
+
+  return tieneAcceso;
+};
+
+/**
  * Middleware factory.
  * @param {string} rutaPagina - Ruta de la página en la tabla permiso (ej: 'inventario')
  */
@@ -43,37 +78,9 @@ const verificarPermiso = (rutaPagina) => {
         return res.status(401).json({ success: false, message: 'No autenticado' });
       }
 
-      // Superadmin: acceso total (resuelto por nombre de rol, con cache)
-      if (await esRolSuperadmin(fkrol)) {
+      if (await tienePermiso(fkrol, rutaPagina)) {
         return next();
       }
-
-      // Revisar caché
-      const cacheKey = `${fkrol}:${rutaPagina}`;
-      const cached = _cache.get(cacheKey);
-      if (cached && cached.expires > Date.now()) {
-        if (cached.tieneAcceso) return next();
-        return res.status(403).json({
-          success: false,
-          message: 'No tienes permisos para realizar esta acción',
-          detalles: { pagina: rutaPagina }
-        });
-      }
-
-      // Consultar BD: ¿tiene este rol permiso para esta página?
-      const registro = await prisma.rol_permiso.findFirst({
-        where: {
-          fkrol,
-          permiso: { ruta: rutaPagina }
-        }
-      });
-
-      const tieneAcceso = !!registro;
-
-      // Guardar en caché
-      _cache.set(cacheKey, { tieneAcceso, expires: Date.now() + CACHE_TTL });
-
-      if (tieneAcceso) return next();
 
       return res.status(403).json({
         success: false,
@@ -102,4 +109,4 @@ const limpiarCacheRol = (fkrol) => {
   }
 };
 
-module.exports = { verificarPermiso, limpiarCachePermisos, limpiarCacheRol };
+module.exports = { verificarPermiso, tienePermiso, limpiarCachePermisos, limpiarCacheRol };
